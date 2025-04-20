@@ -16,3 +16,7 @@ Thumbs.db
 
 # Data files (optional - uncomment if you don't want source data in git)
 data/
+
+# Neo4j Docker Volumes (Host Mapped)
+neo4j/data/
+neo4j/logs/
