@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Temporal Repost Graph</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="app-container">
+        <h1>Temporal Repost Graph Visualization</h1>
+
+        <div id="controls">
+            <h2>Controls</h2>
+            <!-- Slider and labels will go here in Phase 6 -->
+            <p>Time controls will appear here.</p>
+            <div id="time-window-display">
+                Current Window: <span id="start-time-label">-</span> to <span id="end-time-label">-</span>
+            </div>
+        </div>
+
+        <div id="graph-container-wrapper">
+            <div id="graph-container">
+                <!-- Sigma.js will render the graph here -->
+            </div>
+            <div id="loading-indicator" class="hidden">
+                <p>Loading Graph Data...</p>
+                <!-- You can add a spinner animation here later -->
+            </div>
+             <div id="error-display" class="hidden">
+                <p>Error loading data. Please check backend connection.</p>
+            </div>
+        </div>
+
+    </div><!-- /app-container -->
+
+    <!-- Include Libraries -->
+    <!-- Option 1: Use CDN (easier for quick setup) -->
+    <script src="https://unpkg.com/graphology@0.25.1/dist/graphology.umd.min.js"></script>
+    <script src="https://unpkg.com/sigma@2.4.0/dist/sigma.min.js"></script>
+    <!-- If using layout later: -->
+    <!-- <script src="https://unpkg.com/graphology-layout-forceatlas2@0.10.1/dist/graphology-layout-forceatlas2.umd.min.js"></script> -->
+    <!-- If using date formatting later: -->
+    <!-- <script src="https://unpkg.com/dayjs@1.11.10/dayjs.min.js"></script> -->
+    <!-- <script src="https://unpkg.com/dayjs@1.11.10/plugin/utc.js"></script> -->
+    <!-- <script>dayjs.extend(window.dayjs_plugin_utc);</script> -->
+
+
+    <!-- Option 2: Use local files (if installed via npm/yarn) -->
+    <!-- Make sure paths are correct relative to index.html if you bundle -->
+    <!-- <script src="node_modules/graphology/dist/graphology.umd.min.js"></script> -->
+    <!-- <script src="node_modules/sigma/dist/sigma.min.js"></script> -->
+
+    <!-- Your Application Script -->
+    <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,81 @@
+body {
+    font-family: sans-serif;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center; /* Center content horizontally */
+    background-color: #f4f4f4;
+}
+
+#app-container {
+    width: 95%;
+    max-width: 1600px; /* Adjust max width as needed */
+    margin-top: 1em;
+    background-color: #fff;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    padding: 1em;
+    box-sizing: border-box; /* Include padding in width */
+    display: flex;
+    flex-direction: column; /* Stack title, controls, graph vertically */
+}
+
+h1 {
+    text-align: center;
+    margin-top: 0;
+    color: #333;
+}
+
+#controls {
+    border: 1px solid #ccc;
+    padding: 0.5em 1em;
+    margin-bottom: 1em;
+    background-color: #eee;
+}
+
+#time-window-display {
+    margin-top: 0.5em;
+    font-weight: bold;
+    color: #555;
+}
+
+#graph-container-wrapper {
+    position: relative; /* Needed for absolute positioning of overlays */
+    flex-grow: 1; /* Allow graph area to take remaining vertical space */
+    min-height: 500px; /* Ensure minimum height for the graph */
+    border: 1px solid #ccc;
+}
+
+#graph-container {
+    width: 100%;
+    height: 100%;
+    min-height: 500px; /* Match wrapper's min-height */
+    background-color: #ffffff; /* Or a light grey */
+}
+
+/* Styles for overlays */
+#loading-indicator,
+#error-display {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: rgba(255, 255, 255, 0.8); /* Semi-transparent overlay */
+    z-index: 10; /* Ensure it's above the graph canvas */
+    font-size: 1.2em;
+    font-weight: bold;
+    color: #444;
+    text-align: center;
+}
+
+#error-display {
+    color: #a00; /* Red color for errors */
+    background-color: rgba(255, 200, 200, 0.8);
+}
+
+.hidden {
+    display: none !important; /* Use !important to override potential inline styles */
+}
