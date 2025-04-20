@@ -38,17 +38,21 @@ def create_constraints_indexes(tx):
 
 def ingest_data_batch(tx, batch_data):
     """Ingests a batch of data using UNWIND for efficiency."""
-    # Query uses UNWIND, MERGEs nodes, then filters rows with missing data
-    # BEFORE creating the relationship.
+    # Query uses UNWIND, MERGEs nodes, uses WITH to carry forward nodes and row data,
+    # filters rows with missing data using WHERE, then creates the relationship.
     query = """
     UNWIND $batch as row
-    // MERGE nodes first - this is generally safe even if row elements are null,
-    // but the relationship creation would fail.
     MERGE (source:Channel {channel_id: row.source_id})
     MERGE (target:Channel {channel_id: row.target_id})
-    // Filter rows HERE, before creating the relationship
-    WHERE row.source_id IS NOT NULL AND row.target_id IS NOT NULL AND row.timestamp_ms IS NOT NULL
-    // Use CREATE relationship as multiple reposts can exist between channels over time
+    // Use WITH to carry forward the matched/created nodes and the original row data
+    WITH source, target, row
+    // Filter rows HERE using the carried-forward 'row' data
+    WHERE row.source_id IS NOT NULL
+      AND row.target_id IS NOT NULL
+      AND row.timestamp_ms IS NOT NULL
+      AND source IS NOT NULL // Also ensure MERGE succeeded (should always if ID not null)
+      AND target IS NOT NULL // Also ensure MERGE succeeded
+    // Create relationship only for valid, non-null rows/nodes
     CREATE (source)-[:REPOSTED {timestamp: row.timestamp_ms}]->(target)
     """
     tx.run(query, batch=batch_data)
