@@ -1,0 +1,7 @@
+{
+  "dependencies": {
+    "dayjs": "^1.11.13",
+    "graphology": "^0.26.0",
+    "sigma": "^3.0.1"
+  }
+}

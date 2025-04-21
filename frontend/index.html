@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Temporal Repost Graph</title>
-    <link rel="stylesheet" href="style.css">
+    <!-- Link to the CSS file, located in the frontend directory -->
+    <link rel="stylesheet" href="/frontend/style.css">
 </head>
 <body>
     <div id="app-container">
@@ -12,32 +13,57 @@
 
         <div id="controls">
             <h2>Controls</h2>
-            <!-- Slider and labels will go here in Phase 6 -->
-            <p>Time controls will appear here.</p>
-            <div id="time-window-display">
-                Current Window: <span id="start-time-label">-</span> to <span id="end-time-label">-</span>
+            <!-- Container for the Start Time Slider -->
+            <div class="slider-container">
+                <label for="start-time-slider">Start Time:</label>
+                <!-- Range input for start time -->
+                <input type="range" id="start-time-slider" name="start-time" disabled /> <!-- Start disabled until initialized -->
+                <!-- Span to display the formatted start time -->
+                <span id="start-time-label">-</span>
             </div>
+            <!-- Container for the End Time Slider -->
+            <div class="slider-container">
+                <label for="end-time-slider">End Time:</label>
+                <!-- Range input for end time -->
+                <input type="range" id="end-time-slider" name="end-time" disabled /> <!-- Start disabled until initialized -->
+                <!-- Span to display the formatted end time -->
+                <span id="end-time-label">-</span>
+            </div>
+            <!-- Optional: Display the selected window persistently -->
+            <!-- <div id="time-window-display">
+                Current Window: <span id="start-time-label-display">-</span> to <span id="end-time-label-display">-</span>
+            </div> -->
         </div>
 
+        <!-- Wrapper for the graph container and overlays -->
         <div id="graph-container-wrapper">
-            <div id="graph-container">
-                <!-- Sigma.js will render the graph here -->
-            </div>
+            <!-- The container where Sigma.js will render the graph -->
+            <div id="graph-container"></div>
+            <!-- Loading indicator overlay -->
             <div id="loading-indicator" class="hidden">
                 <p>Loading Graph Data...</p>
-                <!-- You can add a spinner animation here later -->
+                <!-- Consider adding a CSS spinner animation later -->
             </div>
+            <!-- Error message overlay -->
              <div id="error-display" class="hidden">
-                <p>Error loading data. Please check backend connection.</p>
+                <p>Error loading data. Please check backend connection or browser console.</p>
             </div>
         </div>
 
     </div><!-- /app-container -->
-    <script src="/node_modules/graphology/dist/graphology.umd.min.js"></script>
-    <script src="/node_modules/sigma/dist/sigma.min.js"></script>
-    <script src="/script.js"></script> <!-- Assumes script.js is in frontend/ -->\
-    <link rel="stylesheet" href="/style.css"> <!-- Assumes style.css is in frontend/ -->
 
-    
+    <!-- JavaScript Libraries -->
+    <!-- Graphology Core Library -->
+    <script src="/node_modules/graphology/dist/graphology.umd.min.js"></script>
+    <!-- Sigma.js Renderer Library -->
+    <script src="/node_modules/sigma/dist/sigma.min.js"></script>
+    <!-- Day.js Date/Time Library -->
+    <script src="/node_modules/dayjs/dayjs.min.js"></script>
+    <!-- Day.js UTC Plugin (needed for correct UTC formatting) -->
+    <script src="/node_modules/dayjs/plugin/utc.js"></script>
+
+    <!-- Your Custom Application Script -->
+    <script src="/frontend/script.js"></script>
+
 </body>
 </html>
