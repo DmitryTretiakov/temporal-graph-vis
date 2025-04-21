@@ -1,15 +1,24 @@
 import os
-from flask import Flask, jsonify, request, g # Keep existing imports
-from neo4j import GraphDatabase # Keep existing imports
-from dotenv import load_dotenv # Keep existing imports
-import sys # Add sys for error printing
+from flask import Flask, jsonify, request, g, send_from_directory # Added send_from_directory
+from neo4j import GraphDatabase
+from dotenv import load_dotenv
+import sys
+import time # Import time for default timestamp calculation if needed
+import traceback # Import traceback for better error logging
 
-# --- Configuration Loading (Keep as before) ---
+# --- Configuration Loading ---
 dotenv_path = os.path.join(os.path.dirname(__file__), '..', '.env')
 load_dotenv(dotenv_path=dotenv_path)
 
-# --- Flask App Initialization (Keep as before) ---
-app = Flask(__name__)
+# --- Determine Frontend Directory Path ---
+# Assumes the 'frontend' directory is at the same level as the 'backend' directory
+# i.e., project_root/frontend and project_root/backend
+project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# frontend_folder = os.path.join(project_root, 'frontend') # OLD
+
+# --- Flask App Initialization (UPDATED) ---
+# Configure the static folder to point to our 'frontend' directory
+app = Flask(__name__, static_folder=project_root, static_url_path='')
 
 # --- Neo4j Driver Setup (Keep as before) ---
 NEO4J_URI = os.getenv("NEO4J_URI")
@@ -105,11 +114,16 @@ def _get_filtered_graph_data_tx(tx, start_time_ms, end_time_ms):
         return [], []
 
 
-# --- API Routes (UPDATED /graph-data) ---
+# --- API Routes ---
 @app.route('/')
-def index():
-    """Basic route to check if the backend is running."""
-    return "Backend is running!"
+def serve_index():
+     # Serve index.html specifically from the frontend subfolder
+     try:
+         # Use os.path.join for cross-platform compatibility
+         return send_from_directory(os.path.join(app.static_folder, 'frontend'), 'index.html')
+     except FileNotFoundError:
+          print(f"ERROR: index.html not found in {os.path.join(app.static_folder, 'frontend')}", file=sys.stderr)
+          return "Error: index.html not found.", 404
 
 @app.route('/graph-data')
 def get_graph_data():
@@ -177,13 +191,14 @@ def get_graph_data():
         return jsonify({"error": "An internal server error occurred while retrieving graph data"}), 500
 
 
-# --- Main Execution (Keep as before) ---
+# --- Main Execution (Keep as before, add one print statement) ---
 if __name__ == '__main__':
     host = os.getenv('FLASK_HOST', '127.0.0.1')
     port = int(os.getenv('FLASK_PORT', 5000))
     debug_mode = os.getenv('FLASK_DEBUG', 'False').lower() in ('true', '1', 't')
 
+    # ADD THIS LINE for confirmation:
+    print(f"Serving static files from project root: {project_root}")
+    # Print the host, port, and debug mode for clarity
     print(f"Starting Flask server on {host}:{port} with debug={debug_mode}")
-    # Use waitress or gunicorn in production instead of app.run()
-    # For development:
     app.run(host=host, port=port, debug=debug_mode)
