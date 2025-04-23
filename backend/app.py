@@ -170,7 +170,7 @@ def get_graph_data():
         print(f"Querying graph data for window: {start_time_ms} -> {end_time_ms}") # Debug print
 
         # 4. Fetch filtered graph data using the determined time window
-        nodes_data, links_data = db.read_transaction(_get_filtered_graph_data_tx, start_time_ms, end_time_ms)
+        nodes_data, links_data = db.execute_read(_get_filtered_graph_data_tx, start_time_ms, end_time_ms)
 
         # 5. Construct JSON response
         response_data = {

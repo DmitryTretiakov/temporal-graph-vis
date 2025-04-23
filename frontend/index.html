@@ -3,36 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Temporal Repost Graph</title>
-    <!-- Link to the CSS file, located in the frontend directory -->
+    <title>Temporal Repost Graph (Sigma/esbuild)</title>
+    <!-- Link to the CSS file -->
     <link rel="stylesheet" href="/frontend/style.css">
 </head>
 <body>
     <div id="app-container">
-        <h1>Temporal Repost Graph Visualization</h1>
+        <h1>Temporal Repost Graph Visualization (Sigma/esbuild)</h1>
 
         <div id="controls">
             <h2>Controls</h2>
             <!-- Container for the Start Time Slider -->
             <div class="slider-container">
+                <!-- IDs MUST match the JS -->
                 <label for="start-time-slider">Start Time:</label>
-                <!-- Range input for start time -->
-                <input type="range" id="start-time-slider" name="start-time" disabled /> <!-- Start disabled until initialized -->
-                <!-- Span to display the formatted start time -->
+                <input type="range" id="start-time-slider" name="start-time" disabled />
                 <span id="start-time-label">-</span>
             </div>
             <!-- Container for the End Time Slider -->
             <div class="slider-container">
+                 <!-- IDs MUST match the JS -->
                 <label for="end-time-slider">End Time:</label>
-                <!-- Range input for end time -->
-                <input type="range" id="end-time-slider" name="end-time" disabled /> <!-- Start disabled until initialized -->
-                <!-- Span to display the formatted end time -->
+                <input type="range" id="end-time-slider" name="end-time" disabled />
                 <span id="end-time-label">-</span>
             </div>
-            <!-- Optional: Display the selected window persistently -->
-            <!-- <div id="time-window-display">
-                Current Window: <span id="start-time-label-display">-</span> to <span id="end-time-label-display">-</span>
-            </div> -->
         </div>
 
         <!-- Wrapper for the graph container and overlays -->
@@ -41,32 +35,19 @@
             <div id="graph-container"></div>
             <!-- Loading indicator overlay -->
             <div id="loading-indicator" class="hidden">
-                <p>Loading Graph Data...</p>
-                <!-- Consider adding a CSS spinner animation later -->
+                <p>Loading / Calculating Layout...</p>
             </div>
             <!-- Error message overlay -->
              <div id="error-display" class="hidden">
-                <p>Error loading data. Please check backend connection or browser console.</p>
+                <p>Error loading data.</p>
             </div>
         </div>
 
     </div><!-- /app-container -->
 
-    <!-- JavaScript Libraries -->
-    <!-- Graphology Core Library -->
-    <script src="/node_modules/graphology/dist/graphology.umd.min.js"></script>
-    <!-- Sigma.js Renderer Library -->
-    <script src="/node_modules/sigma/dist/sigma.min.js"></script>
-    <!-- Day.js Date/Time Library -->
-    <script src="/node_modules/dayjs/dayjs.min.js"></script>
-    <!-- Day.js UTC Plugin (needed for correct UTC formatting) -->
-    <script src="/node_modules/dayjs/plugin/utc.js"></script>
-
-    <!-- Graphology Layout Algorithm -->
-    <script src="/node_modules/graphology-layout-forceatlas2/graphology-layout-forceatlas2.min.js"></script>
-
-    <!-- Your Custom Application Script -->
-    <script src="/frontend/script.js"></script>
+    <!-- Load the single bundled script file created by esbuild -->
+    <!-- This path assumes the bundle is output to frontend/dist/bundle.js -->
+    <script src="/frontend/dist/bundle.js"></script>
 
 </body>
 </html>

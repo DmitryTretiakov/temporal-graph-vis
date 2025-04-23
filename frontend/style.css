@@ -5,24 +5,28 @@ body {
     display: flex;
     justify-content: center; /* Center content horizontally */
     background-color: #f4f4f4;
+    overflow: hidden; /* Prevent body scrollbars */
 }
 
 #app-container {
     width: 95%;
-    max-width: 1600px; /* Adjust max width as needed */
+    max-width: 1600px;
+    height: 95vh; /* Use viewport height */
     margin-top: 1em;
     background-color: #fff;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
     padding: 1em;
-    box-sizing: border-box; /* Include padding in width */
+    box-sizing: border-box;
     display: flex;
-    flex-direction: column; /* Stack title, controls, graph vertically */
+    flex-direction: column;
 }
 
 h1 {
     text-align: center;
     margin-top: 0;
+    margin-bottom: 0.5em;
     color: #333;
+    flex-shrink: 0;
 }
 
 #controls {
@@ -30,26 +34,40 @@ h1 {
     padding: 0.5em 1em;
     margin-bottom: 1em;
     background-color: #eee;
+    flex-shrink: 0;
 }
 
-#time-window-display {
-    margin-top: 0.5em;
-    font-weight: bold;
-    color: #555;
+.slider-container {
+    margin-bottom: 0.5em;
+    display: flex;
+    align-items: center;
 }
+.slider-container label {
+    min-width: 80px; /* Adjust as needed */
+    margin-right: 5px;
+}
+.slider-container input[type="range"] {
+    flex-grow: 1;
+    margin: 0 10px;
+}
+.slider-container span {
+    min-width: 150px; /* Adjust for date string */
+    text-align: right;
+}
+
 
 #graph-container-wrapper {
     position: relative; /* Needed for absolute positioning of overlays */
     flex-grow: 1; /* Allow graph area to take remaining vertical space */
-    min-height: 500px; /* Ensure minimum height for the graph */
     border: 1px solid #ccc;
+    overflow: hidden; /* Important for Sigma */
+    background-color: #ffffff; /* Background for the graph area */
 }
 
 #graph-container {
     width: 100%;
     height: 100%;
-    min-height: 500px; /* Match wrapper's min-height */
-    background-color: #ffffff; /* Or a light grey */
+    min-height: 400px; /* Ensure minimum height */
 }
 
 /* Styles for overlays */

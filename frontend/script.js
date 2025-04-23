@@ -1,6 +1,19 @@
-// Wait for the DOM to be fully loaded before running scripts
+// frontend/script.js (Bundled Version)
+
+// --- ES Module Imports ---
+import Graph from 'graphology';
+import Sigma from 'sigma';
+// Import the default export from the layout library
+import forceAtlas2Layout from 'graphology-layout-forceatlas2';
+import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc'; // Import UTC plugin
+
+// --- Initialize Plugins ---
+dayjs.extend(utc); // Apply the UTC plugin to dayjs
+
+// --- Wait for the DOM to be fully loaded before running scripts ---
 document.addEventListener("DOMContentLoaded", () => {
-    console.log("DOM fully loaded and parsed");
+    console.log("DOM fully loaded and parsed (Bundled Version)");
 
     // --- DOM Element References ---
     const graphContainer = document.getElementById('graph-container');
@@ -21,35 +34,29 @@ document.addEventListener("DOMContentLoaded", () => {
     let draggedNode = null;
     let dragStartX = 0;
     let dragStartY = 0;
-    // --- NEW: Flag for initial zoom ---
     let initialZoomApplied = false;
 
     // --- Configuration ---
     const API_ENDPOINT = '/graph-data';
-    const DEBOUNCE_DELAY = 400;
+    const DEBOUNCE_DELAY = 400; // Delay for slider updates triggering fetch
+    // Layout iterations for initial load (tune based on performance vs quality)
+    const INITIAL_LAYOUT_ITERATIONS = 50; // Lower for faster initial load on large graphs
+    // Layout iterations after drag (minimal adjustment)
+    const DRAG_END_LAYOUT_ITERATIONS = 5; // Quick adjustment after drag
 
-    // --- Day.js Initialization ---
-    if (window.dayjs_plugin_utc) {
-        dayjs.extend(window.dayjs_plugin_utc);
-        console.log("Day.js UTC plugin loaded.");
-    } else {
-        console.warn("Day.js UTC plugin not found. Make sure it's included in index.html.");
-    }
+    // --- Day.js Initialization (already done via import/extend) ---
+    console.log("Day.js initialized with UTC plugin.");
 
     // --- UI Helper Functions ---
     function showLoading(isLoading) {
-        if (isLoading) {
-            loadingIndicator.classList.remove('hidden');
-            errorDisplay.classList.add('hidden');
-        } else {
-            loadingIndicator.classList.add('hidden');
-        }
+        loadingIndicator.classList.toggle('hidden', !isLoading);
+        if (isLoading) errorDisplay.classList.add('hidden'); // Hide error when loading
     }
 
     function showError(message) {
-        errorDisplay.textContent = message || "An error occurred loading graph data.";
+        errorDisplay.textContent = message || "An error occurred.";
         errorDisplay.classList.remove('hidden');
-        showLoading(false);
+        showLoading(false); // Hide loading when error shows
     }
 
     function hideError() {
@@ -57,21 +64,17 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // --- Date Formatting Helper ---
-    function formatTimestampUTC(timestampMs) {
+     function formatTimestampUTC(timestampMs) {
         if (timestampMs === null || timestampMs === undefined || isNaN(timestampMs)) return '-';
-        if (typeof dayjs === 'function' && dayjs.utc) {
+        if (typeof dayjs === 'function') {
             const numericTimestamp = Number(timestampMs);
             if (isNaN(numericTimestamp)) return '-';
             return dayjs.utc(numericTimestamp).format('YYYY-MM-DD HH:mm [UTC]');
         } else {
-            console.warn("Day.js or UTC plugin not available for formatting.");
+            console.warn("Day.js not available for formatting."); // Should not happen
             const numericTimestamp = Number(timestampMs);
-            if (isNaN(numericTimestamp)) return '-';
-            try {
-                return new Date(numericTimestamp).toISOString();
-            } catch (e) {
-                return '-';
-            }
+             if (isNaN(numericTimestamp)) return '-';
+            try { return new Date(numericTimestamp).toISOString(); } catch (e) { return '-'; }
         }
     }
 
@@ -79,21 +82,28 @@ document.addEventListener("DOMContentLoaded", () => {
     function initializeSigma() {
         console.log("Initializing Sigma.js...");
         try {
-            graph = new graphology.Graph({ multi: true, type: 'directed' });
+            graph = new Graph({ multi: true, type: 'directed' });
 
             sigmaInstance = new Sigma(graph, graphContainer, {
-                allowInvalidContainer: true,
+                allowInvalidContainer: true, // Should not be needed if container is sized
                 defaultNodeType: "circle",
                 defaultEdgeType: "arrow",
-                labelDensity: 0.07,
-                labelGridCellSize: 60,
-                labelRenderedSizeThreshold: 15,
+                // Performance & Readability settings for large graphs:
+                labelDensity: 0.1, // Show fewer labels overall
+                labelGridCellSize: 150, // Increase space required between labels
+                labelRenderedSizeThreshold: 12, // Only render labels for nodes visually larger than this
                 labelFont: "Lato, sans-serif",
-                zIndex: true,
+                zIndex: true, // Enable z-index for layering
+                hideEdgesOnMove: true, // Hide edges while panning/zooming
+                hideLabelsOnMove: true, // Hide labels while panning/zooming
+                mouseEnabled: true,
+                 settings: {
+                    enableCameraInteraction: true // Allow zoom/pan
+                }
             });
 
             console.log("Sigma.js initialized successfully.");
-            setupSigmaEventHandlers(); // Setup handlers after successful init
+            setupSigmaEventHandlers();
 
         } catch (e) {
             console.error("Error initializing Sigma:", e);
@@ -103,63 +113,60 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-// --- Sigma Event Handlers ---
-function setupSigmaEventHandlers() {
-    if (!sigmaInstance) return;
-    console.log("Setting up Sigma event handlers...");
+    // --- Sigma Event Handlers ---
+    function setupSigmaEventHandlers() {
+        if (!sigmaInstance) return;
+        console.log("Setting up Sigma event handlers...");
 
-    // --- Node Dragging Logic ---
-   sigmaInstance.on("downNode", (e) => {
-       isDragging = true;
-       draggedNode = e.node;
-       // ... (calculate dragStartX/Y) ...
-       const nodePosition = sigmaInstance.graphToViewport(graph.getNodeAttributes(draggedNode));
-       const mousePosition = { x: e.event.x, y: e.event.y };
-       dragStartX = mousePosition.x - nodePosition.x;
-       dragStartY = mousePosition.y - nodePosition.y;
-       console.log("Start dragging node:", draggedNode);
-       sigmaInstance.getCamera().disable();
-   });
+        // --- Node Dragging Logic (No dynamic layout during drag) ---
+        sigmaInstance.on("downNode", (e) => {
+            isDragging = true;
+            draggedNode = e.node;
+            const initialGraphPos = graph.getNodeAttributes(draggedNode);
+            const nodePosition = sigmaInstance.graphToViewport(initialGraphPos);
+            const mousePosition = { x: e.event.x, y: e.event.y };
+            dragStartX = mousePosition.x - nodePosition.x;
+            dragStartY = mousePosition.y - nodePosition.y;
+            console.log("Start dragging node:", draggedNode);
+            sigmaInstance.getCamera().disable();
+        });
 
-   sigmaInstance.getMouseCaptor().on("mousemove", (e) => {
-       // ... (keep existing mousemove logic to update node x/y) ...
-       if (!isDragging || !draggedNode) return;
-       const mousePosition = { x: e.x, y: e.y };
-       const newViewportPos = { x: mousePosition.x - dragStartX, y: mousePosition.y - dragStartY };
-       const newGraphPos = sigmaInstance.viewportToGraph(newViewportPos);
-       graph.setNodeAttribute(draggedNode, "x", newGraphPos.x);
-       graph.setNodeAttribute(draggedNode, "y", newGraphPos.y);
-   });
+        sigmaInstance.getMouseCaptor().on("mousemove", (e) => {
+            if (!isDragging || !draggedNode) return;
+            const mousePosition = { x: e.x, y: e.y };
+            const newViewportPos = { x: mousePosition.x - dragStartX, y: mousePosition.y - dragStartY };
+            const newGraphPos = sigmaInstance.viewportToGraph(newViewportPos);
+            // Update graph data directly - Sigma will re-render the node
+            graph.setNodeAttribute(draggedNode, "x", newGraphPos.x);
+            graph.setNodeAttribute(draggedNode, "y", newGraphPos.y);
+        });
 
-   sigmaInstance.getMouseCaptor().on("mouseup", () => {
-       if (isDragging && draggedNode) {
-           console.log("End dragging node:", draggedNode);
-           // --- NEW: Trigger layout with FEWER iterations ---
-           applyLayout(20); // Run only 20 iterations for a quick adjustment
-       }
-       isDragging = false;
-       draggedNode = null;
-       sigmaInstance.getCamera().enable();
-   });
+        const stopDragging = () => {
+            if (isDragging && draggedNode) {
+                console.log("End dragging node:", draggedNode);
+                 // Run a FEW layout iterations AFTER drag ends for minor adjustment
+                 console.log(`Applying ${DRAG_END_LAYOUT_ITERATIONS} layout iterations post-drag...`);
+                 applyLayout(DRAG_END_LAYOUT_ITERATIONS);
+            }
+            isDragging = false;
+            draggedNode = null;
+            if (sigmaInstance) {
+                 sigmaInstance.getCamera().enable();
+            }
+        };
 
-   sigmaInstance.getMouseCaptor().on("mouseleave", () => {
-        if (isDragging && draggedNode) {
-           console.log("End dragging node (mouseleave):", draggedNode);
-            // --- NEW: Trigger layout with FEWER iterations ---
-           applyLayout(20); // Run only 20 iterations for a quick adjustment
-        }
-       isDragging = false;
-       draggedNode = null;
-       sigmaInstance.getCamera().enable();
-   });
+        sigmaInstance.getMouseCaptor().on("mouseup", stopDragging);
+        sigmaInstance.getMouseCaptor().on("mouseleave", stopDragging); // Stop if mouse leaves canvas
 
-   // ... (Hover/Click handlers later) ...
-}
+        // --- Hover Handlers (Optional: Can impact performance on very large graphs) ---
+        // sigmaInstance.on("enterNode", (e) => { /* Add tooltip logic if needed */ });
+        // sigmaInstance.on("leaveNode", (e) => { /* Hide tooltip logic if needed */ });
+    }
 
     // --- Data Fetching and Graph Population ---
     async function fetchAndPopulateGraph(startTime = null, endTime = null) {
         if (!graph || !sigmaInstance) {
-            console.error("Graph or Sigma instance not initialized. Cannot fetch data.");
+            console.error("Graph or Sigma instance not initialized.");
             showError("Initialization failed. Cannot load data.");
             return;
         }
@@ -167,6 +174,8 @@ function setupSigmaEventHandlers() {
             console.log("Request skipped: Already fetching data.");
             return;
         }
+
+        initialZoomApplied = false; // Reset zoom flag for new data
 
         console.log(`Fetching graph data for window: ${startTime} -> ${endTime}`);
         isFetchingData = true;
@@ -177,6 +186,7 @@ function setupSigmaEventHandlers() {
         const queryStartTime = startTime === null ? overallMinTimestamp : startTime;
         const queryEndTime = endTime === null ? overallMaxTimestamp : endTime;
 
+        // Ensure valid numbers before appending
         if (typeof queryStartTime === 'number' && !isNaN(queryStartTime)) {
              params.append('start_time', Math.round(queryStartTime));
         }
@@ -190,60 +200,95 @@ function setupSigmaEventHandlers() {
         try {
             const response = await fetch(url);
             if (!response.ok) {
-                const errorData = await response.json().catch(() => ({ error: `Server responded with status ${response.status}` }));
-                throw new Error(`HTTP error ${response.status}: ${errorData.error || response.statusText}`);
+                const errorText = await response.text();
+                throw new Error(`HTTP error ${response.status}: ${errorText}`);
             }
             const data = await response.json();
-            console.log("Data received from backend:", data);
+            console.log(`Data received: ${data.nodes?.length || 0} nodes, ${data.links?.length || 0} links`);
 
-            graph.clear();
+            if (!data || !Array.isArray(data.nodes) || !Array.isArray(data.links)) {
+                throw new Error("Invalid data structure received from backend.");
+            }
 
+            // Preserve existing node positions if possible
+            const existingNodes = {};
+            if (graph.order > 0) {
+                graph.forEachNode((node, attrs) => {
+                    existingNodes[node] = { x: attrs.x, y: attrs.y };
+                });
+            }
+            graph.clear(); // Clear previous graph data
+
+            console.log("Populating graph...");
+            let nodesAdded = 0;
             data.nodes.forEach(node => {
-                if (!graph.hasNode(node.id)) {
+                if (node.id === null || node.id === undefined) {
+                    console.warn("Skipping node with null/undefined ID:", node); return;
+                }
+                const nodeExists = graph.hasNode(node.id); // Should always be false after clear()
+                if (!nodeExists) {
+                     const existingPos = existingNodes[node.id];
                      graph.addNode(node.id, {
-                        label: node.label,
-                        x: Math.random() * 100,
-                        y: Math.random() * 100,
-                        size: Math.max(3, Math.sqrt(node.degree || 1) * 2),
+                        label: node.label || node.id,
+                        x: existingPos?.x ?? Math.random() * 1000, // Use existing or random
+                        y: existingPos?.y ?? Math.random() * 1000,
+                        size: Math.max(1.5, Math.sqrt(node.degree || 1) * 0.6), // Adjust size scaling
                         degree: node.degree || 0,
                         color: getRandomColor()
                     });
-                } else {
-                    graph.setNodeAttribute(node.id, 'degree', node.degree || 0);
-                    graph.setNodeAttribute(node.id, 'size', Math.max(3, Math.sqrt(node.degree || 1) * 2));
+                    nodesAdded++;
                 }
             });
 
-            let edgeCount = 0;
+            let edgesAdded = 0;
             data.links.forEach(link => {
+                 if (link.source === null || link.source === undefined || link.target === null || link.target === undefined) {
+                     console.warn("Skipping link with null/undefined source/target:", link); return;
+                 }
                 try {
+                    // Only add edges if both source and target nodes were successfully added
                     if (graph.hasNode(link.source) && graph.hasNode(link.target)) {
-                         graph.addEdge(link.source, link.target, {
-                            timestamp: link.timestamp,
-                            type: 'arrow',
-                            size: 1,
-                            color: '#ccc'
-                        });
-                        edgeCount++;
-                    } else {
-                        console.warn(`Skipping edge: Node missing for link ${link.source} -> ${link.target}.`);
+                         const edgeKey = `${link.source}|${link.target}|${link.timestamp}`; // Use a robust key
+                         if (!graph.hasEdge(edgeKey)) {
+                            graph.addEdgeWithKey(edgeKey, link.source, link.target, {
+                                timestamp: link.timestamp,
+                                type: 'arrow',
+                                size: 0.5, // Keep edges thin
+                                color: '#ccc'
+                            });
+                            edgesAdded++;
+                         }
                     }
                 } catch (e) {
-                    console.error(`Error adding edge ${link.source} -> ${link.target}:`, e);
+                     // Catch potential errors during edge addition
+                     if (!e.message || !e.message.includes("already exists")) { // Ignore duplicate edge errors if keying works
+                         console.error(`Error adding edge ${link.source} -> ${link.target}:`, e);
+                     }
                 }
             });
-            console.log(`Graph populated: ${graph.order} nodes, ${graph.size} edges (added ${edgeCount} based on links data).`);
+            console.log(`Graph populated: ${nodesAdded} nodes, ${edgesAdded} edges.`);
+            if (graph.order === 0) {
+                 console.warn("Graph is empty after population.");
+                 // Optionally show a message to the user
+            }
 
-            // **** INITIALIZE SLIDERS (ONLY ON FIRST LOAD) ****
+            // Initialize sliders (only on first full load)
             if (startTime === null && endTime === null) {
                 console.log("Performing initial slider setup...");
                 overallMinTimestamp = data.min_timestamp;
                 overallMaxTimestamp = data.max_timestamp;
-                console.log(`Overall time range received: ${overallMinTimestamp} -> ${overallMaxTimestamp}`);
-                const minTsIsValid = typeof overallMinTimestamp === 'number' && !isNaN(overallMinTimestamp);
-                const maxTsIsValid = typeof overallMaxTimestamp === 'number' && !isNaN(overallMaxTimestamp);
+                 const now = Date.now();
+                 if (overallMinTimestamp === null || overallMinTimestamp === undefined || isNaN(overallMinTimestamp)) {
+                    overallMinTimestamp = now - 3600 * 1000 * 24 * 7; // Default: 1 week ago
+                    console.warn("Using default min timestamp");
+                 }
+                 if (overallMaxTimestamp === null || overallMaxTimestamp === undefined || isNaN(overallMaxTimestamp) || overallMaxTimestamp < overallMinTimestamp) {
+                    overallMaxTimestamp = now; // Default: now
+                    console.warn("Using default max timestamp");
+                 }
+                console.log(`Overall time range: ${overallMinTimestamp} -> ${overallMaxTimestamp}`);
 
-                if (minTsIsValid && maxTsIsValid && overallMinTimestamp <= overallMaxTimestamp) {
+                if (overallMinTimestamp <= overallMaxTimestamp) {
                     startTimeSlider.min = String(overallMinTimestamp);
                     startTimeSlider.max = String(overallMaxTimestamp);
                     endTimeSlider.min = String(overallMinTimestamp);
@@ -256,28 +301,34 @@ function setupSigmaEventHandlers() {
                     endTimeSlider.disabled = false;
                     console.log("Sliders initialized and enabled.");
                 } else {
-                     console.error("Invalid or inconsistent overall timestamps received from backend:", data.min_timestamp, data.max_timestamp);
-                     showError("Error: Invalid time range received from server. Cannot initialize sliders.");
+                     console.error("Invalid overall timestamps after defaults:", overallMinTimestamp, overallMaxTimestamp);
+                     showError("Error: Invalid time range. Cannot initialize sliders.");
                      startTimeSlider.disabled = true;
                      endTimeSlider.disabled = true;
                 }
             }
 
-            // Apply layout
-            applyLayout(); // Call layout after populating
+            // Apply layout only if the graph has nodes
+            if (graph.order > 0) {
+                console.log("Triggering layout calculation...");
+                applyLayout(INITIAL_LAYOUT_ITERATIONS);
+            } else {
+                 showLoading(false); // Hide loading if graph is empty
+            }
 
         } catch (error) {
             console.error("Failed to fetch or process graph data:", error);
             showError(`Failed to load graph data: ${error.message}`);
-            graph.clear();
-        } finally {
+            graph.clear(); // Clear graph on error
             showLoading(false);
+        } finally {
             isFetchingData = false;
+            console.log("fetchAndPopulateGraph finished.");
         }
     }
 
     // --- Helper for random colors ---
-    function getRandomColor() {
+     function getRandomColor() {
         const letters = '0123456789ABCDEF';
         let color = '#';
         for (let i = 0; i < 6; i++) {
@@ -286,80 +337,85 @@ function setupSigmaEventHandlers() {
         return color;
     }
 
-// --- Layout Function ---
-function applyLayout(iterationsOverride) { // Accept optional override
-    if (!graph || !sigmaInstance || graph.order === 0) {
-        console.log("Skipping layout: Graph empty or not initialized.");
-        return;
-    }
-    const layoutIterations = iterationsOverride !== undefined ? iterationsOverride : 100; // Use override or default
-    console.log(`Applying ForceAtlas2 layout (${layoutIterations} iterations)...`);
-
-
-    if (typeof graphologyLayoutForceatlas2 === 'undefined') {
-        console.error("graphologyLayoutForceatlas2 is not loaded.");
-        return;
-    }
-
-    // --- Adjusted ForceAtlas2 Settings ---
-    const settings = {
-        iterations: layoutIterations, // Use the determined iteration count
-        settings: {
-            barnesHutOptimize: graph.order > 1000,
-            gravity: 0.8,
-            scalingRatio: 35,      // INCREASED FURTHER - Experiment needed (try 30, 40, 50)
-            strongGravityMode: true,
+    // --- Layout Function ---
+    function applyLayout(iterations) {
+        // Check if the imported layout function exists
+        if (typeof forceAtlas2Layout === 'undefined') {
+             console.error("Layout library (forceAtlas2Layout) not loaded or imported correctly!");
+             showError("Layout engine failed to load.");
+             return;
         }
-    };
-    // ---
+        if (!graph || !sigmaInstance || graph.order === 0) {
+            console.log("Skipping layout: Graph empty or not initialized.");
+            return;
+        }
 
-    try {
-        // Run the layout
-        graphologyLayoutForceatlas2.assign(graph, settings);
-        console.log("ForceAtlas2 layout applied.");
+        const layoutIterations = iterations !== undefined ? iterations : INITIAL_LAYOUT_ITERATIONS;
+        console.log(`Applying ForceAtlas2 layout (${layoutIterations} iterations)...`);
+        showLoading(true); // Show loading indicator during layout
 
-        // Apply initial camera centering and zoom-out ONCE
-        if (!initialZoomApplied && graph.order > 0) {
-            console.log("Applying initial camera centering and zoom out...");
+        // Use setTimeout to allow UI to update (show loading) before potentially blocking calculation
+        setTimeout(() => {
+            try {
+                const settings = {
+                    iterations: layoutIterations,
+                    settings: {
+                        barnesHutOptimize: true, // Crucial for performance
+                        barnesHutTheta: 0.6,    // Balance speed/accuracy (0.5-1.0)
+                        gravity: 1.0,           // Adjust to pull graph together or spread out
+                        scalingRatio: 10.0,     // Adjust overall spread
+                        strongGravityMode: false, // Usually too slow for large graphs
+                        slowDown: 1 + Math.log(graph.order) / 10, // Increase slowdown for larger graphs
+                        adjustSizes: false      // Prevent node sizes overly influencing layout
+                    }
+                };
 
-            // Calculate graph center
-            let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
-            graph.forEachNode((node, attributes) => {
-                if (attributes.x < minX) minX = attributes.x;
-                if (attributes.x > maxX) maxX = attributes.x;
-                if (attributes.y < minY) minY = attributes.y;
-                if (attributes.y > maxY) maxY = attributes.y;
-            });
+                console.time("Layout Calculation");
+                forceAtlas2Layout.assign(graph, settings); // Use the imported function
+                console.log("Node positions after layout:");
+                let count = 0;
+                graph.forEachNode((node, attrs) => {
+                    if (count < 5) { // Log first 5 nodes
+                        console.log(`  Node ${node}: x=${attrs.x?.toFixed(2)}, y=${attrs.y?.toFixed(2)}`);
+                    }
+                    count++;
+                });
+                console.timeEnd("Layout Calculation");
+                console.log("ForceAtlas2 layout applied.");
 
-            let centerX = 0;
-            let centerY = 0;
-            if (minX !== Infinity) { // Check if nodes exist
-                centerX = (minX + maxX) / 2;
-                centerY = (minY + maxY) / 2;
+                 // Apply initial camera centering/zoom only after the *first* main layout run
+                 if (!initialZoomApplied && graph.order > 0 && iterations >= INITIAL_LAYOUT_ITERATIONS) {
+                    console.log("Applying initial camera centering and zoom out...");
+                     let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+                     graph.forEachNode((node, attributes) => {
+                         if (attributes.x < minX) minX = attributes.x;
+                         if (attributes.x > maxX) maxX = attributes.x;
+                         if (attributes.y < minY) minY = attributes.y;
+                         if (attributes.y > maxY) maxY = attributes.y;
+                     });
+                     let centerX = 0, centerY = 0;
+                     if (minX !== Infinity) { // Check if nodes exist and have positions
+                         centerX = (minX + maxX) / 2;
+                         centerY = (minY + maxY) / 2;
+                     }
+                     // Start more zoomed out for large graphs
+                     const targetRatio = Math.min(0.8, 20 / Math.sqrt(graph.order)); // Heuristic zoom level
+                     console.log(`Centering camera on [${centerX.toFixed(2)}, ${centerY.toFixed(2)}] with ratio ${targetRatio.toFixed(3)}`);
+
+                     sigmaInstance.getCamera().setState({ x: centerX, y: centerY, ratio: targetRatio, angle: 0 });
+                     console.log("Camera state after centering:", sigmaInstance.getCamera().getState());
+                     initialZoomApplied = true;
+                }
+
+            } catch (e) {
+                console.error("Error applying ForceAtlas2 layout:", e);
+                showError("Error occurred during graph layout.");
+            } finally {
+                 showLoading(false); // Hide loading indicator
+                 console.log("applyLayout finished.");
             }
-
-            const targetRatio = 0.8; // Keep initial zoom factor (adjust if needed)
-            console.log(`Centering camera on [${centerX.toFixed(2)}, ${centerY.toFixed(2)}] with ratio ${targetRatio}`);
-
-            sigmaInstance.getCamera().setState({ // Use setState for immediate effect or animate
-                 x: centerX,
-                 y: centerY,
-                 ratio: targetRatio,
-                 angle: 0 // Ensure angle is reset
-            });
-            // OR Animate:
-            sigmaInstance.getCamera().animate(
-                { x: centerX, y: centerY, ratio: targetRatio },
-                { duration: 600 }
-            );
-
-            initialZoomApplied = true; // Set flag so it doesn't run again
-        }
-
-    } catch (e) {
-        console.error("Error applying ForceAtlas2 layout:", e);
+        }, 50); // Increased delay (50ms) to ensure loading indicator renders reliably
     }
-}
 
     // --- Debounce Function ---
     function debounce(func, delay) {
@@ -368,11 +424,8 @@ function applyLayout(iterationsOverride) { // Accept optional override
             const context = this;
             clearTimeout(timeoutId);
             timeoutId = setTimeout(() => {
-                if (!isFetchingData) {
-                    func.apply(context, args);
-                } else {
-                    console.log("Debounced call skipped: data fetch in progress.");
-                }
+                // No need to check isFetchingData here, fetch function handles it
+                func.apply(context, args);
             }, delay);
         };
     }
@@ -384,43 +437,45 @@ function applyLayout(iterationsOverride) { // Accept optional override
         startTimeMs = isNaN(startTimeMs) ? overallMinTimestamp : startTimeMs;
         endTimeMs = isNaN(endTimeMs) ? overallMaxTimestamp : endTimeMs;
 
+        // Prevent sliders from crossing
         if (this === startTimeSlider && startTimeMs > endTimeMs) {
             endTimeSlider.value = String(startTimeMs);
             endTimeMs = startTimeMs;
-            console.warn("Start time adjusted to match end time (sliders crossed).");
         } else if (this === endTimeSlider && endTimeMs < startTimeMs) {
             startTimeSlider.value = String(endTimeMs);
             startTimeMs = endTimeMs;
-            console.warn("End time adjusted to match start time (sliders crossed).");
         }
 
         startTimeLabel.textContent = formatTimestampUTC(startTimeMs);
         endTimeLabel.textContent = formatTimestampUTC(endTimeMs);
     }
 
+    // Debounced function to fetch data when sliders stop moving
     const debouncedFetchUpdate = debounce(() => {
         let currentStartTimeMs = parseInt(startTimeSlider.value, 10);
         let currentEndTimeMs = parseInt(endTimeSlider.value, 10);
         currentStartTimeMs = isNaN(currentStartTimeMs) ? overallMinTimestamp : currentStartTimeMs;
         currentEndTimeMs = isNaN(currentEndTimeMs) ? overallMaxTimestamp : currentEndTimeMs;
-        if (currentStartTimeMs > currentEndTimeMs) {
+        if (currentStartTimeMs > currentEndTimeMs) { // Ensure start <= end
             currentStartTimeMs = currentEndTimeMs;
         }
         fetchAndPopulateGraph(currentStartTimeMs, currentEndTimeMs);
     }, DEBOUNCE_DELAY);
 
+    // Update labels immediately on input
     startTimeSlider.addEventListener('input', handleTimeChange);
     endTimeSlider.addEventListener('input', handleTimeChange);
-    startTimeSlider.addEventListener('input', debouncedFetchUpdate);
-    endTimeSlider.addEventListener('input', debouncedFetchUpdate);
+    // Fetch data only when the user releases the slider (change event)
+    startTimeSlider.addEventListener('change', debouncedFetchUpdate);
+    endTimeSlider.addEventListener('change', debouncedFetchUpdate);
 
     // --- Main Execution ---
     initializeSigma();
     if (sigmaInstance && graph) {
-        fetchAndPopulateGraph(); // Initial load
+        fetchAndPopulateGraph(); // Initial load (fetches full range by default)
     } else {
-         console.error("Skipping initial data fetch because Sigma/Graphology failed to initialize.");
-         showError("Graph visualization could not be initialized. Cannot load data.");
+         console.error("Skipping initial data fetch: Sigma/Graphology failed initialization.");
+         showError("Graph visualization failed to initialize.");
          startTimeSlider.disabled = true;
          endTimeSlider.disabled = true;
     }
