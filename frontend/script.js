@@ -221,20 +221,32 @@ document.addEventListener("DOMContentLoaded", () => {
 
             console.log("Populating graph...");
             let nodesAdded = 0;
+            const MIN_NODE_SIZE = 2;     // Smallest node visual size
+            const MAX_NODE_SIZE = 12;    // *** TRY A MUCH SMALLER MAX SIZE (e.g., 12 or 15) ***
+            const NODE_BASE_SIZE = 0.7;  // Adjust this factor for the sqrt scaling if needed
             data.nodes.forEach(node => {
                 if (node.id === null || node.id === undefined) {
                     console.warn("Skipping node with null/undefined ID:", node); return;
                 }
                 const nodeExists = graph.hasNode(node.id); // Should always be false after clear()
                 if (!nodeExists) {
-                     const existingPos = existingNodes[node.id];
-                     graph.addNode(node.id, {
+                    const existingPos = existingNodes[node.id];
+                    const degree = node.degree || 0;
+            
+                    // Calculate size using sqrt (dampens large values)
+                    let targetSize = MIN_NODE_SIZE + Math.sqrt(degree) * NODE_BASE_SIZE;
+            
+                    // Clamp the size
+                    const finalSize = Math.max(MIN_NODE_SIZE, Math.min(targetSize, MAX_NODE_SIZE));
+            
+                    graph.addNode(node.id, {
                         label: node.label || node.id,
-                        x: existingPos?.x ?? Math.random() * 1000, // Use existing or random
+                        x: existingPos?.x ?? Math.random() * 1000,
                         y: existingPos?.y ?? Math.random() * 1000,
-                        size: Math.max(1.5, Math.sqrt(node.degree || 1) * 0.6), // Adjust size scaling
-                        degree: node.degree || 0,
-                        color: getRandomColor()
+                        size: finalSize, // Use clamped size
+                        degree: degree,
+                        color: getRandomColor(), // Keep random for now
+                        zIndex: 1 // Nodes should have higher zIndex
                     });
                     nodesAdded++;
                 }
@@ -254,7 +266,8 @@ document.addEventListener("DOMContentLoaded", () => {
                                 timestamp: link.timestamp,
                                 type: 'arrow',
                                 size: 0.5, // Keep edges thin
-                                color: '#ccc'
+                                color: '#ccc',
+                                zIndex: 0 // Edges should have lower zIndex
                             });
                             edgesAdded++;
                          }
@@ -311,9 +324,11 @@ document.addEventListener("DOMContentLoaded", () => {
             // Apply layout only if the graph has nodes
             if (graph.order > 0) {
                 console.log("Triggering layout calculation...");
-                applyLayout(INITIAL_LAYOUT_ITERATIONS);
+                // applyLayout(INITIAL_LAYOUT_ITERATIONS); // <-- COMMENT THIS OUT TEMPORARILY
+                console.log("Skipping layout for debugging disappearance issue."); // Add this log
+                showLoading(false); // Make sure loading is hidden if layout skipped
             } else {
-                 showLoading(false); // Hide loading if graph is empty
+                showLoading(false); // Hide loading if graph is empty
             }
 
         } catch (error) {
@@ -362,8 +377,8 @@ document.addEventListener("DOMContentLoaded", () => {
                     settings: {
                         barnesHutOptimize: true, // Crucial for performance
                         barnesHutTheta: 0.6,    // Balance speed/accuracy (0.5-1.0)
-                        gravity: 1.0,           // Adjust to pull graph together or spread out
-                        scalingRatio: 10.0,     // Adjust overall spread
+                        gravity: 0.6,           // Adjust to pull graph together or spread out
+                        scalingRatio: 20.0,     // Adjust overall spread
                         strongGravityMode: false, // Usually too slow for large graphs
                         slowDown: 1 + Math.log(graph.order) / 10, // Increase slowdown for larger graphs
                         adjustSizes: false      // Prevent node sizes overly influencing layout
