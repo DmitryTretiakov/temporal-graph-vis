@@ -4,8 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Temporal Repost Graph (Sigma/esbuild)</title>
-    <!-- Link to the CSS file -->
+    <!-- Link to the CSS file served by Flask -->
+    <!-- Path is relative to the static_url_path ('') -->
     <link rel="stylesheet" href="/frontend/style.css">
+    <style>
+        /* Add this to ensure container has size before Sigma initializes */
+        #graph-container {
+            width: 100%;
+            height: 100%;
+            min-height: 400px; /* Or a specific pixel height */
+        }
+    </style>
 </head>
 <body>
     <div id="app-container">
@@ -27,6 +36,8 @@
                 <input type="range" id="end-time-slider" name="end-time" disabled />
                 <span id="end-time-label">-</span>
             </div>
+             <!-- Optional: Add a button to manually trigger layout -->
+             <button id="layout-button" style="margin-top: 5px;">Run Layout</button>
         </div>
 
         <!-- Wrapper for the graph container and overlays -->
@@ -46,7 +57,7 @@
     </div><!-- /app-container -->
 
     <!-- Load the single bundled script file created by esbuild -->
-    <!-- This path assumes the bundle is output to frontend/dist/bundle.js -->
+    <!-- Path is relative to the static_url_path ('') defined in Flask -->
     <script src="/frontend/dist/bundle.js"></script>
 
 </body>
