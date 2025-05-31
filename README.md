@@ -10,7 +10,7 @@
 
 1.  **Clone the Repository:**
     ```bash
-    git clone https://github.com/your-username/temporal-graph-vis.git
+    git clone https://github.com/DmitryTretiakov/temporal-graph-vis.git
     cd temporal-graph-vis
     ```
 
