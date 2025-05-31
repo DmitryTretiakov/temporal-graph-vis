@@ -4,7 +4,7 @@
 *   Python 3.7+
 *   Neo4j Community Edition (Neo4j Desktop recommended for easy management)
 *   Git
-*   (Optional) Node.js and npm/yarn (if you plan to manage frontend dependencies this way)
+*   (Optional) Node.js and npm/yarn
 
 ## Setup & Installation
 
@@ -91,10 +91,3 @@
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a pull request or open an issue for bugs, feature requests, or improvements.
-
-*(Consider adding a "Future Enhancements" or "Known Limitations" section if you have specific ideas).*
-
-## License
-
-*(Consider adding a license, e.g., MIT License. If so, create a `LICENSE` file in your repository.)*
-This project is licensed under the MIT License - see the `LICENSE` file for details.
